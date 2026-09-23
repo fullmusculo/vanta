@@ -588,9 +588,10 @@ function App() {
                           <b>Dirección asistida en ChatGPT</b>
                           <p>
                             Exporta el contexto, pide una decisión estructurada
-                            en ChatGPT y pega aquí el JSON. El editor valida
-                            cada operación, conserva el proyecto e indica qué
-                            cambió.
+                            en ChatGPT y pega aquí el JSON. Adjunta también el
+                            vídeo o fotogramas si la decisión depende de lo
+                            visible. El editor valida cada operación, conserva
+                            el proyecto e indica qué cambió.
                             {p.analysis.words.length === 0
                               ? " Sin transcripción, evita decisiones sobre el contenido hablado."
                               : ""}
