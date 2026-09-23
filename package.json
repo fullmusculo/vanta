@@ -11,6 +11,8 @@
     "upgrade": "npx remotion upgrade",
     "editor:build": "tsc -p tsconfig.editor.json && vite build web --outDir ../web-dist",
     "editor:api": "node --env-file-if-exists=.env --import tsx server/api.ts",
+    "editor:mcp": "node --env-file-if-exists=.env --import tsx server/mcp.ts",
+    "editor:import": "node --env-file-if-exists=.env --import tsx scripts/import-checkpoint.ts",
     "editor:worker": "node --env-file-if-exists=.env --import tsx server/worker.ts",
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.editor.json",
@@ -19,6 +21,7 @@
     "test:auto-fixture": "node scripts/make-fixtures.mjs && node scripts/run-auto-fixture.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.1",
     "@remotion/cli": "4.0.527",
     "@remotion/motion-blur": "4.0.527",
     "@remotion/noise": "4.0.527",
