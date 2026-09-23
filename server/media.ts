@@ -5,6 +5,7 @@ import { mkdir, readFile, writeFile, stat, open } from "node:fs/promises";
 import path from "node:path";
 import { dataRoot } from "./db";
 import { Analysis } from "../src/agentic/planner";
+import { displayDimensions, volumeFromLog } from "./media-metadata";
 export async function run(
   bin: string,
   args: string[],
@@ -114,8 +115,7 @@ export async function inspect(file: string) {
               : "audio/mpeg",
     video: !!video,
     audio: !!audio,
-    width: video?.width,
-    height: video?.height,
+    ...displayDimensions(video),
   };
 }
 export async function perceive(
@@ -124,7 +124,7 @@ export async function perceive(
 ): Promise<Analysis> {
   const dir = path.join(dataRoot, "cache", asset.hash);
   await mkdir(dir, { recursive: true });
-  const cache = path.join(dir, "analysis-v1.json");
+  const cache = path.join(dir, "analysis-v2.json");
   try {
     return JSON.parse(await readFile(cache, "utf8"));
   } catch {}
@@ -187,8 +187,8 @@ export async function perceive(
       if (s) start = +s[1];
       if (e) silences.push({ start, end: Math.min(+e[1], asset.duration) });
     }
-    meanDb = Number(log.match(/mean_volume: ([-\d.]+)/)?.[1]) || null;
-    maxDb = Number(log.match(/max_volume: ([-\d.]+)/)?.[1]) || null;
+    meanDb = volumeFromLog(log, "mean");
+    maxDb = volumeFromLog(log, "max");
   }
   progress(0.6);
   const frames = [];

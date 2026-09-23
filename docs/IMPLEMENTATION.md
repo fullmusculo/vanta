@@ -88,3 +88,18 @@ Licenses: retain Vanta MIT attribution; Remotion terms apply separately and need
 4. Add source-aligned caption correction preservation, ASR chunking, finer visual sampling/face tracks, audio loudness normalization and smoother transitions.
 5. Add a fully graphical drag/trim timeline, multiuser auth/ownership, isolated workers, resource quotas, managed object storage, cancellation, progress heartbeats, retention and backups.
 6. Add allowlisted generative asset providers, rights metadata, automatic B-roll/Shorts and learned preference evaluation only after the core gate passes.
+
+### First real-media ingestion check — 2026-09-23
+
+A user-supplied phone recording passed upload, hashing, proxy generation and
+technical perception. This exposed two metadata defects: display rotation was
+not reflected in the reported dimensions, and a measured 0 dBFS peak was being
+converted to `null`. Both are fixed with regression tests (16 tests total).
+Perception cache version is now v2 so previous incorrect peak values are not
+reused. Build and type checking pass.
+
+The actual footage and project data remain private and are not committed.
+Speech transcription and semantic editing of this recording are still blocked:
+no API credentials are configured, and an experimental local ASR run was stopped
+by automatic security review because of unrelated telemetry. This does not
+constitute a successful live AI end-to-end test.
