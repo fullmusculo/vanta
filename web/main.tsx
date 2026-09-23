@@ -167,6 +167,7 @@ function App() {
       await open(created.id);
     });
   const selected = plan?.clips.find((c) => c.id === selection);
+  const selectedOverlay = plan?.overlays.find((o) => o.id === selection);
   const total = plan ? duration(plan) : 0;
   const media = p
     ? Object.fromEntries(
@@ -759,6 +760,71 @@ function App() {
                         encuadre, tiempo y audio.
                       </p>
                     )}
+                    {selectedOverlay && plan ? (
+                      <>
+                        <hr />
+                        <div className="section-label">GRÁFICO SELECCIONADO</div>
+                        <h3>{selectedOverlay.id}</h3>
+                        <p className="notice">{selectedOverlay.reason}</p>
+                        <label>Texto
+                          <input type="text" value={selectedOverlay.text} disabled={locked}
+                            onChange={(e) => change({ ...plan, overlays: plan.overlays.map(o =>
+                              o.id === selectedOverlay.id ? { ...o, text: e.target.value } : o) })} />
+                        </label>
+                        <div className="field-grid">
+                          {(["start", "end", "x", "y", "scale"] as const).map((key) => (
+                            <label key={key}>{key}
+                              <input type="number" value={selectedOverlay[key]} disabled={locked}
+                                step={key === "start" || key === "end" ? 1 : 0.01}
+                                onChange={(e) => change({ ...plan, overlays: plan.overlays.map(o =>
+                                  o.id === selectedOverlay.id ? { ...o, [key]: Number(e.target.value) } : o) })} />
+                            </label>
+                          ))}
+                        </div>
+                        {selectedOverlay.motion ? (
+                          <>
+                          <label>Animación
+                            <select value={selectedOverlay.motion.preset} disabled={locked}
+                              onChange={(e) => change({ ...plan, overlays: plan.overlays.map(o => o.id === selectedOverlay.id
+                                ? { ...o, motion: { ...o.motion!, preset: e.target.value as any,
+                                    value: e.target.value === "stat-counter" ? 0 : null } } : o) })}>
+                              <option value="kinetic-title">Título cinético</option>
+                              <option value="callout">Idea destacada</option>
+                              <option value="stat-counter">Cifra animada</option>
+                            </select>
+                          </label>
+                          <div className="field-grid">
+                            {(["enterFrames", "exitFrames"] as const).map(key => (
+                              <label key={key}>{key === "enterFrames" ? "Entrada · frames" : "Salida · frames"}
+                                <input type="number" min={3} max={30} step={1} disabled={locked}
+                                  value={selectedOverlay.motion![key]}
+                                  onChange={(e) => change({ ...plan, overlays: plan.overlays.map(o => o.id === selectedOverlay.id
+                                    ? { ...o, motion: { ...o.motion!, [key]: Number(e.target.value) } } : o) })} />
+                              </label>
+                            ))}
+                          </div>
+                          </>
+                        ) : null}
+                        {selectedOverlay.motion?.preset === "stat-counter" ? (
+                          <>
+                            <label>Cifra verificada
+                              <input type="number" value={selectedOverlay.motion.value ?? 0} min={0} max={1000000} disabled={locked}
+                                onChange={(e) => change({ ...plan, overlays: plan.overlays.map(o => o.id === selectedOverlay.id
+                                  ? { ...o, motion: { ...o.motion!, value: Number(e.target.value) } } : o) })} />
+                            </label>
+                            <label>Unidad o sufijo
+                              <input type="text" maxLength={12} value={selectedOverlay.motion.suffix} disabled={locked}
+                                onChange={(e) => change({ ...plan, overlays: plan.overlays.map(o => o.id === selectedOverlay.id
+                                  ? { ...o, motion: { ...o.motion!, suffix: e.target.value } } : o) })} />
+                            </label>
+                          </>
+                        ) : null}
+                        <button disabled={locked} onClick={() => {
+                          change({ ...plan, overlays: plan.overlays.filter(o => o.id !== selectedOverlay.id) });
+                          setSelection("");
+                        }}>Eliminar gráfico</button>
+                      </>
+                    ) : null}
                     {plan ? (
                       <>
                         <hr />
@@ -952,12 +1018,16 @@ function App() {
                     {plan.overlays.map((o) => (
                       <button
                         key={o.id}
-                        className="graphic clip"
+                        className={"graphic clip " + (selection === o.id ? "chosen" : "")}
                         style={{
                           left: `${(o.start / total) * 100}%`,
                           width: `${((o.end - o.start) / total) * 100}%`,
                         }}
-                        onClick={() => player.current?.seekTo(o.start)}
+                        onClick={() => {
+                          setSelection(o.id);
+                          setTab("properties");
+                          player.current?.seekTo(o.start);
+                        }}
                       >
                         {o.text || o.type}
                       </button>
@@ -1064,7 +1134,7 @@ function App() {
                                 crypto.randomUUID().replaceAll("-", ""),
                               start: 0,
                               end: Math.min(total, 90),
-                              type: "lower-third",
+                              type: "motion",
                               text,
                               sourceId: null,
                               x: 0.5,
@@ -1072,6 +1142,7 @@ function App() {
                               scale: 0.7,
                               confidence: 1,
                               reason: "Gráfico añadido por el editor",
+                              motion: { preset: "kinetic-title", enterFrames: 10, exitFrames: 8, value: null, suffix: "" },
                             },
                           ],
                         });

@@ -6,6 +6,7 @@ import path from "node:path";
 import { dataRoot } from "./db";
 import { Analysis } from "../src/agentic/planner";
 import { displayDimensions, volumeFromLog } from "./media-metadata";
+import { transcribeLocal } from "./whisper-cpp";
 export async function run(
   bin: string,
   args: string[],
@@ -241,12 +242,23 @@ export async function perceive(
   return a;
 }
 export async function transcribe(asset: any) {
+  const provider = process.env.TRANSCRIPTION_PROVIDER ||
+    (process.env.WHISPER_CPP_BIN && process.env.WHISPER_CPP_MODEL ? "whisper-cpp" : "openai");
+  if (!["whisper-cpp", "openai"].includes(provider)) throw Error("Unknown transcription provider");
+  const dir = path.join(dataRoot, "cache", asset.hash);
+  await mkdir(dir, { recursive: true });
+  const file = path.join(dir, "audio.wav");
+  try {
+    await stat(file);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
+    if (!asset.audio) throw Error("Source has no speech audio");
+    await run("ffmpeg", ["-hide_banner", "-nostdin", "-y", "-protocol_whitelist", "file,pipe",
+      "-i", asset.path, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", file]);
+  }
+  if (provider === "whisper-cpp") return transcribeLocal(asset, file);
   const key = process.env.OPENAI_API_KEY;
-  if (!key)
-    throw Error(
-      "Configure OPENAI_API_KEY or import a word-timestamp transcript",
-    );
-  const file = path.join(dataRoot, "cache", asset.hash, "audio.wav");
+  if (!key) throw Error("Configure OPENAI_API_KEY, a local whisper.cpp model, or import a timed transcript");
   const cache = path.join(dataRoot, "cache", asset.hash, "whisper-v1.json");
   try {
     return JSON.parse(await readFile(cache, "utf8"));

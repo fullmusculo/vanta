@@ -34,6 +34,8 @@ Para hacer cambios, ChatGPT lee primero el contexto con su revisión, inspeccion
 
 Los fotogramas no proporcionan una transcripción. Para subtítulos con texto real, primero genere una transcripción verificable con tiempos por palabra e impórtela con `import_verified_transcript`. La generación local de esa transcripción depende de tener instalado un motor de voz y sus pesos, o de configurar un proveedor de API independiente. Nunca se debe inferir una transcripción a partir de imágenes.
 
+Las opciones de transcripción y sus límites están en [Transcripción con tiempos](ASR.md).
+
 ## Prueba local
 
 ```bash

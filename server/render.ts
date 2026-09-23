@@ -2,16 +2,19 @@ import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
 import { createServer } from "node:http";
 import { createReadStream } from "node:fs";
-import { stat, mkdir, rename } from "node:fs/promises";
+import { stat, mkdir, rename, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { dataRoot } from "./db";
 import { validatePlan } from "../src/agentic/contract";
+import { duration } from "../src/agentic/contract";
+import { run } from "./media";
 let bundled: Promise<string> | undefined;
 export async function renderProject(
   p: any,
   job: string,
   progress: (n: number) => void,
+  frameRange?: [number, number],
 ) {
   const plan = validatePlan(p.plan),
     token = randomBytes(24).toString("hex"),
@@ -77,18 +80,57 @@ export async function renderProject(
     await mkdir(dir, { recursive: true });
     const output = path.join(dir, `${job}.mp4`),
       temp = path.join(dir, `${job}.partial.mp4`);
-    await renderMedia({
-      composition,
-      serveUrl,
-      inputProps,
-      codec: "h264",
-      outputLocation: temp,
-      browserExecutable,
-      concurrency: 1,
-      scale: plan.render.quality === "draft" ? 0.5 : 1,
-      onProgress: ({ progress: p }) => progress(p),
-      timeoutInMilliseconds: 120000,
-    });
+    const totalFrames = duration(plan);
+    const spans: [number, number][] = frameRange
+      ? [frameRange]
+      : Array.from({ length: Math.ceil(totalFrames / 450) }, (_, i) => [
+          i * 450,
+          Math.min(totalFrames - 1, (i + 1) * 450 - 1),
+        ]);
+    const segmentDir = path.join(dir, `${job}-segments`);
+    if (spans.length > 1) await mkdir(segmentDir, { recursive: true });
+    const segments: string[] = [];
+    try {
+      for (const [i, range] of spans.entries()) {
+        const segment =
+          spans.length === 1
+            ? temp
+            : path.join(segmentDir, `${String(i).padStart(4, "0")}.mp4`);
+        await renderMedia({
+          composition,
+          serveUrl,
+          inputProps,
+          codec: "h264",
+          outputLocation: segment,
+          browserExecutable,
+          concurrency: 1,
+          scale: plan.render.quality === "draft" ? 0.5 : 1,
+          frameRange: range,
+          onProgress: ({ progress: rendered }) =>
+            progress((range[0] + rendered * (range[1] - range[0] + 1)) / totalFrames * 0.94),
+          timeoutInMilliseconds: 120000,
+        });
+        segments.push(segment);
+      }
+      if (segments.length > 1) {
+        const list = path.join(segmentDir, "segments.txt");
+        await writeFile(
+          list,
+          segments.map((f) => `file '${f.replaceAll("'", "'\\''")}'`).join("\n"),
+        );
+        await run("ffmpeg", [
+          "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0",
+          "-i", list, "-t", String(totalFrames / plan.fps),
+          "-vf", `setpts=N/(${plan.fps}*TB)`, "-fps_mode", "passthrough",
+          "-c:v", "libx264", "-preset", "veryfast", "-crf", "18",
+          "-c:a", "copy",
+          "-movflags", "+faststart", "-y", temp,
+        ], 300000);
+      }
+      progress(0.99);
+    } finally {
+      if (segments.length > 1) await rm(segmentDir, { recursive: true, force: true });
+    }
     await rename(temp, output);
     return output;
   } finally {

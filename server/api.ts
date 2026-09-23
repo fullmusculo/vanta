@@ -65,7 +65,7 @@ app.get("/api/config", (_req, res) =>
         process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_DIRECTOR_MODEL
       ),
     },
-    transcription: !!process.env.OPENAI_API_KEY,
+    transcription: !!process.env.OPENAI_API_KEY || !!(process.env.WHISPER_CPP_BIN && process.env.WHISPER_CPP_MODEL),
     mode: "local",
     limits: { maxMinutes: 60, maxMegabytes: 500 },
   }),

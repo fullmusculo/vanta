@@ -199,7 +199,8 @@
                       "lower-third",
                       "image",
                       "broll",
-                      "stat"
+                      "stat",
+                      "motion"
                     ]
                   },
                   "text": {
@@ -230,6 +231,53 @@
                     "type": "number",
                     "minimum": 0.1,
                     "maximum": 1
+                  },
+                  "motion": {
+                    "type": "object",
+                    "properties": {
+                      "preset": {
+                        "type": "string",
+                        "enum": [
+                          "kinetic-title",
+                          "callout",
+                          "stat-counter"
+                        ]
+                      },
+                      "enterFrames": {
+                        "type": "integer",
+                        "minimum": 3,
+                        "maximum": 30
+                      },
+                      "exitFrames": {
+                        "type": "integer",
+                        "minimum": 3,
+                        "maximum": 30
+                      },
+                      "value": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "suffix": {
+                        "type": "string",
+                        "maxLength": 12
+                      }
+                    },
+                    "required": [
+                      "preset",
+                      "enterFrames",
+                      "exitFrames",
+                      "value",
+                      "suffix"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [

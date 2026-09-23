@@ -47,12 +47,19 @@ export const overlaySchema = z
     ...meta,
     start: frame,
     end: frame,
-    type: z.enum(["title", "lower-third", "image", "broll", "stat"]),
+    type: z.enum(["title", "lower-third", "image", "broll", "stat", "motion"]),
     text: z.string().max(300),
     sourceId: id.nullable(),
     x: z.number().min(0).max(1),
     y: z.number().min(0).max(1),
     scale: z.number().min(0.1).max(1),
+    motion: z.object({
+      preset: z.enum(["kinetic-title", "callout", "stat-counter"]),
+      enterFrames: z.number().int().min(3).max(30),
+      exitFrames: z.number().int().min(3).max(30),
+      value: z.number().min(0).max(1000000).nullable(),
+      suffix: z.string().max(12),
+    }).strict().optional(),
   })
   .strict();
 export const audioSchema = z
@@ -88,7 +95,7 @@ export const profileSchema = z
   .strict();
 export const neutralProfile: z.infer<typeof profileSchema> = {
   id: "fullmusculo-draft",
-  label: "FullMúsculo · perfil por configurar",
+  label: "FullMúsculo · paleta verificada, estilo en revisión",
   brandVerified: false,
   cutPaceSeconds: 8,
   punchInEvery: 3,
@@ -96,7 +103,7 @@ export const neutralProfile: z.infer<typeof profileSchema> = {
   visualIntensity: "balanced",
   fontFamily: "Arial",
   captionColor: "#ffffff",
-  accentColor: "#ffffff",
+  accentColor: "#8ae0ff",
   safeArea: 0.16,
   captionWords: 5,
   transition: "cut",
@@ -198,6 +205,11 @@ export function validatePlan(
       if (w.start * 30 < c.start - 1 || w.end * 30 > c.end + 1)
         throw Error("Caption word outside caption range");
   for (const o of p.overlays) {
+    if (o.type === "motion") {
+      if (!o.motion || o.motion.enterFrames + o.motion.exitFrames > o.end - o.start ||
+        (o.motion.preset === "stat-counter") !== (o.motion.value !== null))
+        throw Error("Invalid motion graphic configuration");
+    } else if (o.motion) throw Error("Motion configuration requires a motion graphic");
     if (["image", "broll"].includes(o.type)) {
       const s = sources.get(o.sourceId || "");
       if (!s || s.kind !== (o.type === "image" ? "image" : "video"))

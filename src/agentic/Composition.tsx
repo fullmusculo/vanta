@@ -15,6 +15,7 @@ import {
   getCaptionStyleCSS,
 } from "../integrations/animated-captions";
 import { animateShape } from "../integrations/motion-graphics";
+import { MotionGraphic } from "./MotionGraphic";
 export type EditorProps = { plan: EditPlan; media: Record<string, string> };
 function Shot({
   clip,
@@ -77,6 +78,7 @@ function Graphic({
     opacity: props.opacity,
     fontFamily: plan.profile.fontFamily,
   };
+  if (overlay.type === "motion") return <MotionGraphic overlay={overlay} profile={plan.profile} />;
   if (overlay.type === "image")
     return <Img src={media[overlay.sourceId!]} style={style} />;
   if (overlay.type === "broll")

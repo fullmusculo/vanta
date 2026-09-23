@@ -116,6 +116,25 @@ test("Audio and overlays must reference allowed assets and fit timeline", () => 
   ];
   assert.throws(() => validatePlan(p));
 });
+test("Motion graphics require a bounded preset and factual counter value", () => {
+  const p = base();
+  p.overlays.push({
+    id: "motion1", start: 0, end: 65, type: "motion", text: "Idea principal",
+    sourceId: null, x: 0.5, y: 0.2, scale: 0.7,
+    confidence: 1, reason: "Texto verificado", motion: {
+      preset: "kinetic-title", enterFrames: 8, exitFrames: 8,
+      value: null, suffix: "",
+    },
+  });
+  assert.doesNotThrow(() => validatePlan(p));
+  p.overlays[0].motion!.enterFrames = 60;
+  assert.throws(() => validatePlan(p));
+  p.overlays[0].motion!.enterFrames = 8;
+  p.overlays[0].motion!.preset = "stat-counter";
+  assert.throws(() => validatePlan(p));
+  p.overlays[0].motion!.value = 15;
+  assert.doesNotThrow(() => validatePlan(p));
+});
 test("Incremental direction preserves untouched clips and original object", () => {
   const p = base(),
     before = structuredClone(p);

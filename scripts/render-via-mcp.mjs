@@ -27,7 +27,7 @@ try {
   if (queued.isError) throw Error(queued.content[0].text);
   const jobId = JSON.parse(queued.content[0].text).jobId;
   console.log(JSON.stringify({ jobId, revision }));
-  for (let i = 0; i < 180; i++) {
+  for (let i = 0; i < 600; i++) {
     await new Promise(r => setTimeout(r, 3000));
     const response = await client.callTool({ name: 'get_render_status', arguments: { projectId: id, jobId } });
     if (response.isError) throw Error(response.content[0].text);
@@ -35,7 +35,7 @@ try {
     if (i % 10 === 0 || state.job.status !== 'running') console.log(JSON.stringify(state));
     if (state.job.status === 'completed') break;
     if (state.job.status === 'failed') throw Error(state.job.error);
-    if (i === 179) throw Error('Render exceeded 9 minutes; job remains in database');
+    if (i === 599) throw Error('Render exceeded 30 minutes; job remains in database');
   }
 } finally {
   await client.close();
