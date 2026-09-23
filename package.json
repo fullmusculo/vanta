@@ -15,7 +15,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.editor.json",
     "test:smoke": "node scripts/make-fixtures.mjs && node scripts/run-smoke.mjs",
-    "schema:export": "node --import tsx scripts/export-schema.ts"
+    "schema:export": "node --import tsx scripts/export-schema.ts",
+    "test:auto-fixture": "node scripts/make-fixtures.mjs && node scripts/run-auto-fixture.mjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.527",

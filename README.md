@@ -51,6 +51,8 @@ npm run editor:build
 npm audit
 # Synthetic API/worker/render test; Linux/macOS, uses /tmp and port 4317:
 npm run test:smoke
+# Automatic orchestration with explicitly MOCKED provider transport:
+npm run test:auto-fixture
 ```
 
 `test:smoke` generates its own test pattern and tones, then verifies perception, caption import, manual editing, revision protection and both export formats. It does not call a real AI provider or replace a browser interaction test.

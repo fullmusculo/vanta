@@ -60,6 +60,8 @@ https://platform.claude.com/docs/en/build-with-claude/structured-outputs
 - A rendered vertical frame was visually inspected: graphic/captions present and within frame.
 - `npm audit`: zero vulnerabilities after aligning all Remotion packages to 4.0.527. This is a dependency snapshot, not a full security certification.
 - Browser GUI inspection was blocked because the session browser could not open the local server. Interactive GUI behavior remains to be verified in the intended runtime; API tests are not a substitute for that gate.
+- Additional API smoke passed: uploaded PNG overlay, rejected a playlist disguised as MP4, rejected foreign Origin, and asserted exact video frame counts / H.264 / AAC in both exports.
+- Automatic edit + render + incremental follow-up passed with an explicitly MOCKED OpenAI HTTP transport and real FFmpeg/Remotion processing. This verifies orchestration and request/response handling, not live provider capability or editorial quality. Run `npm run test:auto-fixture`. Product startup never loads this fixture.
 - Live AI transcription/directing, one-instruction autoedit against a real provider and real-video quality review remain pending. Do not label these passed based on the presence of adapters.
 
 ## Persistence, feedback and recovery

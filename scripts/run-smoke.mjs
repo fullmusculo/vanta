@@ -22,7 +22,7 @@ try {
   });
   const test = spawn(
     process.execPath,
-    ["--import", "tsx", "scripts/smoke.ts"],
+    ["--import", "tsx", process.env.SMOKE_SCRIPT || "scripts/smoke.ts"],
     { env, stdio: "inherit" },
   );
   const code = await new Promise((r) => test.on("exit", r));
