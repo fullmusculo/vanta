@@ -6,6 +6,7 @@ import { existsSync } from "node:fs";
 import { z } from "zod";
 import { db, dataRoot, uid, project, save, event, enqueue, busy } from "./db";
 import { hash, inspect } from "./media";
+import { applyDecision } from "./director";
 import {
   validatePlan,
   wordSchema,
@@ -215,6 +216,48 @@ app.put(
     p.plan = plan;
     const saved = save(p, expected);
     event(p.id, "human-edit", { before, after: plan });
+    res.json(saved);
+  }),
+);
+app.post(
+  "/api/projects/:id/decisions",
+  wrap((req: any, res: any) => {
+    const p = project(req.params.id);
+    if (busy(p.id) || !p.plan || !p.analysis)
+      throw Error("Analyze first; project must be idle");
+    const request = z
+      .object({
+        revision: z.number().int().nonnegative(),
+        instruction: z.string().min(1).max(8000),
+        decision: z.unknown(),
+      })
+      .strict()
+      .parse(req.body);
+    if (request.revision !== p.revision)
+      throw Error("Revision conflict: reload project");
+    const before = p.plan;
+    const { plan, decision } = applyDecision(
+      before,
+      request.decision,
+      p.analysis,
+      p.primary,
+    );
+    p.plan = plan;
+    p.history.push({
+      role: "director",
+      source: "chatgpt-interactive",
+      instruction: request.instruction,
+      text: decision.summary,
+      decision,
+      at: Date.now(),
+    });
+    const saved = save(p, request.revision);
+    event(p.id, "chatgpt-proposal", {
+      before,
+      after: plan,
+      instruction: request.instruction,
+      decision,
+    });
     res.json(saved);
   }),
 );

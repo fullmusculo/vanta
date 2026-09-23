@@ -34,6 +34,7 @@ function App() {
       "Edita este vídeo con un ritmo claro y natural. Elimina repeticiones, destaca las ideas principales y conserva el sentido del contenido.",
     ),
     [provider, setProvider] = useState("openai"),
+    [chatgptDecision, setChatgptDecision] = useState(""),
     [past, setPast] = useState<EditPlan[]>([]),
     [future, setFuture] = useState<EditPlan[]>([]),
     [tab, setTab] = useState("director");
@@ -122,6 +123,40 @@ function App() {
     await api(`/projects/${p.id}/jobs`, json("POST", { type, ...extra }));
     const next = await api("/projects/" + p.id);
     setP(next);
+  };
+  const exportChatGPTContext = () => {
+    if (!p || !plan) return;
+    const payload = {
+      projectId: p.id,
+      revision: p.revision,
+      instruction,
+      analysis: {
+        duration: p.analysis.duration,
+        transcriptStatus: p.analysis.transcriptStatus,
+        words: p.analysis.words,
+        silences: p.analysis.silences,
+        sceneChanges: p.analysis.sceneChanges,
+      },
+      plan,
+      assets: p.assets.map((a: any) => ({
+        id: a.id,
+        kind: a.kind,
+        name: a.name,
+        duration: a.duration,
+      })),
+      responseContract:
+        "Return only {summary:string,operations:array} following docs/director-decision.schema.json. Never infer spoken words from silence data. Use only existing IDs and ranges within the plan.",
+    };
+    const url = URL.createObjectURL(
+      new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `chatgpt-context-${p.id}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
   const upload = async (file: File) =>
     attempt(async () => {
@@ -549,6 +584,56 @@ function App() {
                             ? "AI Director pendiente de credenciales y modelo del servidor."
                             : "El Director recibe transcripción y seis fotogramas del material."}
                         </small>
+                        <div className="notice">
+                          <b>Dirección asistida en ChatGPT</b>
+                          <p>
+                            Exporta el contexto, pide una decisión estructurada
+                            en ChatGPT y pega aquí el JSON. El editor valida
+                            cada operación, conserva el proyecto e indica qué
+                            cambió.
+                            {p.analysis.words.length === 0
+                              ? " Sin transcripción, evita decisiones sobre el contenido hablado."
+                              : ""}
+                          </p>
+                          <button
+                            disabled={locked || dirty}
+                            onClick={exportChatGPTContext}
+                          >
+                            Descargar contexto para ChatGPT
+                          </button>
+                          <label>
+                            Decisión JSON de ChatGPT
+                            <textarea
+                              value={chatgptDecision}
+                              onChange={(e) =>
+                                setChatgptDecision(e.target.value)
+                              }
+                              rows={4}
+                              placeholder='{"summary":"...","operations":[]}'
+                            />
+                          </label>
+                          <button
+                            disabled={
+                              locked || dirty || !chatgptDecision.trim()
+                            }
+                            onClick={() =>
+                              attempt(async () => {
+                                await api(
+                                  `/projects/${p.id}/decisions`,
+                                  json("POST", {
+                                    revision: p.revision,
+                                    instruction,
+                                    decision: JSON.parse(chatgptDecision),
+                                  }),
+                                );
+                                setChatgptDecision("");
+                                await open(p.id);
+                              })
+                            }
+                          >
+                            Validar y aplicar al proyecto
+                          </button>
+                        </div>
                       </>
                     )}
                     <div className="history">

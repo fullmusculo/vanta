@@ -150,6 +150,49 @@ const stale = await fetch(host + `/api/projects/${p.id}/plan`, {
   body: JSON.stringify({ plan: p.plan, revision: p.revision - 1 }),
 });
 assert.equal(stale.status, 409);
+const chatDecision = {
+  summary: "Accent the second section for review",
+  operations: [
+    {
+      type: "set-clip",
+      clip: {
+        ...p.plan.clips[1],
+        zoom: 1.16,
+        confidence: 0.92,
+        reason: "Requested visible emphasis in this segment",
+      },
+    },
+  ],
+};
+const revisionBeforeChat = p.revision;
+const rejectedChat = await fetch(host + `/api/projects/${p.id}/decisions`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    revision: revisionBeforeChat,
+    instruction: "Accent section two",
+    decision: { ...chatDecision, serverUrl: "http://127.0.0.1" },
+  }),
+});
+assert.equal(rejectedChat.status, 400);
+assert.equal((await api("/projects/" + p.id)).revision, revisionBeforeChat);
+p = await api(`/projects/${p.id}/decisions`, "POST", {
+  revision: revisionBeforeChat,
+  instruction: "Accent section two",
+  decision: chatDecision,
+});
+assert.equal(p.plan.clips[1].zoom, 1.16);
+assert.equal(p.history.at(-1).source, "chatgpt-interactive");
+const staleChat = await fetch(host + `/api/projects/${p.id}/decisions`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    revision: revisionBeforeChat,
+    instruction: "repeat",
+    decision: chatDecision,
+  }),
+});
+assert.equal(staleChat.status, 409);
 await api(`/projects/${p.id}/jobs`, "POST", { type: "render" });
 p = await wait(p.id);
 console.log("Rendered 16:9", p.renders.at(-1));

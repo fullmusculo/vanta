@@ -28,6 +28,8 @@ Open **http://127.0.0.1:4317**. Keep API and worker running on the same host/dat
 
 For AI: configure `OPENAI_API_KEY` (word transcription) and an accessible `OPENAI_DIRECTOR_MODEL`, or `ANTHROPIC_API_KEY` plus `ANTHROPIC_DIRECTOR_MODEL` for directing. The Anthropic route still uses OpenAI transcription unless a timed transcript is imported. Keys stay on the server. No model name or successful API connection is assumed.
 
+**ChatGPT subscription workflow:** You can use ChatGPT to propose edits interactively without configuring an API key. After analyzing a project, open the Director panel and download its context JSON. Attach that JSON to your ChatGPT conversation with the instruction and ask for a JSON object matching [`docs/director-decision.schema.json`](docs/director-decision.schema.json). Paste the object into **Decisión JSON de ChatGPT** and choose **Validar y aplicar al proyecto**. The backend validates every operation, records the prior plan and proposed change, checks the revision and updates the existing timeline; invalid output is rejected. You may also ask a ChatGPT Work/Codex agent with access to the local project to perform this step. Captions still require a timed transcript. This is an interactive workflow in ChatGPT and does not turn a ChatGPT subscription into API credentials or enable unattended autoediting from the web UI.
+
 1. Import MP4/MOV/WebM. The primary source must have a video stream.
 2. Use **Editar y renderizar automáticamente** with your instruction when providers are configured, or **Analizar material** to inspect a technical silence cut.
 3. Review/edit clips, captions, graphics and audio. Import music/images/B-roll as needed. Unknown brand styles remain neutral.
@@ -37,7 +39,7 @@ For AI: configure `OPENAI_API_KEY` (word transcription) and an accessible `OPENA
 Without credentials you can use the technical rough cut and import a transcript JSON array:
 
 ```json
-[{"word":"Hola","start":0.2,"end":0.6,"confidence":1}]
+[{ "word": "Hola", "start": 0.2, "end": 0.6, "confidence": 1 }]
 ```
 
 Times are source seconds. This is **not** presented as automatic transcription.
