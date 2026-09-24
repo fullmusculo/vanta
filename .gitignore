@@ -7,3 +7,9 @@ out/
 *.gif
 .env
 .env.local
+node_modules
+build/
+web-dist/
+.data/
+.env.*
+!.env.example
